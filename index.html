@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Larger Rotating ASCII Shapes</title>
+    <title>Uniform Speed Rotating ASCII Shapes</title>
     <style>
         body {
             background-color: black;
@@ -18,7 +18,7 @@
         }
         #shape {
             white-space: pre;
-            font-size: 3px; /* Reduced font size to accommodate larger shapes */
+            font-size: 3px;
             line-height: 1;
         }
         .buttons {
@@ -43,8 +43,8 @@
 
     <script>
         const shapeElement = document.getElementById('shape');
-        const width = 200;  // Increased width
-        const height = 150; // Increased height
+        const width = 200;
+        const height = 150;
 
         let currentShape = 'cube';
 
@@ -126,7 +126,7 @@
         }
 
         function project(point) {
-            const scale = 35; // Increased scale for larger shapes
+            const scale = 35;
             const aspectRatio = width / height;
             const [x, y, z] = point;
             return [
@@ -178,10 +178,17 @@
 
         let angleX = 0;
         let angleY = 0;
+        let lastTime = 0;
+        const rotationSpeed = 0.5; // Adjust this value to change rotation speed
 
-        function animate() {
-            angleX += 0.03;
-            angleY += 0.02;
+        function animate(currentTime) {
+            if (!lastTime) lastTime = currentTime;
+            const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+            lastTime = currentTime;
+
+            angleX += rotationSpeed * deltaTime;
+            angleY += (rotationSpeed * 0.7) * deltaTime; // Slightly slower Y rotation
+
             shapeElement.textContent = render(angleX, angleY);
             requestAnimationFrame(animate);
         }
@@ -192,7 +199,7 @@
             });
         });
 
-        animate();
+        requestAnimationFrame(animate);
     </script>
 </body>
 </html>
