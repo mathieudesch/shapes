@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Larger Rotating ASCII Shapes</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: monospace;
+        }
+        #shape {
+            white-space: pre;
+            font-size: 3px; /* Reduced font size to accommodate larger shapes */
+            line-height: 1;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        button {
+            margin: 0 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="shape"></div>
+    <div class="buttons">
+        <button id="cubeButton">Cube</button>
+        <button id="cylinderButton">Cylinder</button>
+        <button id="prismButton">Triangular Prism</button>
+        <button id="pyramidButton">Pyramid</button>
+    </div>
+
+    <script>
+        const shapeElement = document.getElementById('shape');
+        const width = 200;  // Increased width
+        const height = 150; // Increased height
+
+        let currentShape = 'cube';
+
+        const shapes = {
+            cube: {
+                vertices: [
+                    [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+                    [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]
+                ],
+                edges: [
+                    [0, 1], [1, 2], [2, 3], [3, 0],
+                    [4, 5], [5, 6], [6, 7], [7, 4],
+                    [0, 4], [1, 5], [2, 6], [3, 7]
+                ]
+            },
+            cylinder: {
+                vertices: createCylinderVertices(),
+                edges: createCylinderEdges()
+            },
+            prism: {
+                vertices: [
+                    [-1, -1, -1], [1, -1, -1], [0, 1, -1],
+                    [-1, -1, 1], [1, -1, 1], [0, 1, 1]
+                ],
+                edges: [
+                    [0, 1], [1, 2], [2, 0],
+                    [3, 4], [4, 5], [5, 3],
+                    [0, 3], [1, 4], [2, 5]
+                ]
+            },
+            pyramid: {
+                vertices: [
+                    [-1, -1, -1], [1, -1, -1], [1, -1, 1], [-1, -1, 1], [0, 1, 0]
+                ],
+                edges: [
+                    [0, 1], [1, 2], [2, 3], [3, 0],
+                    [0, 4], [1, 4], [2, 4], [3, 4]
+                ]
+            }
+        };
+
+        function createCylinderVertices(segments = 40) {
+            const vertices = [];
+            for (let i = 0; i < segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                vertices.push([Math.cos(angle), -1, Math.sin(angle)]);
+                vertices.push([Math.cos(angle), 1, Math.sin(angle)]);
+            }
+            return vertices;
+        }
+
+        function createCylinderEdges(segments = 40) {
+            const edges = [];
+            for (let i = 0; i < segments; i++) {
+                const j = (i + 1) % segments;
+                edges.push([i * 2, j * 2]);
+                edges.push([i * 2 + 1, j * 2 + 1]);
+                edges.push([i * 2, i * 2 + 1]);
+            }
+            return edges;
+        }
+
+        function rotateX(point, angle) {
+            const [x, y, z] = point;
+            return [
+                x,
+                y * Math.cos(angle) - z * Math.sin(angle),
+                y * Math.sin(angle) + z * Math.cos(angle)
+            ];
+        }
+
+        function rotateY(point, angle) {
+            const [x, y, z] = point;
+            return [
+                x * Math.cos(angle) + z * Math.sin(angle),
+                y,
+                -x * Math.sin(angle) + z * Math.cos(angle)
+            ];
+        }
+
+        function project(point) {
+            const scale = 35; // Increased scale for larger shapes
+            const aspectRatio = width / height;
+            const [x, y, z] = point;
+            return [
+                Math.round(x * scale * aspectRatio + width / 2),
+                Math.round(y * scale + height / 2)
+            ];
+        }
+
+        function render(angleX, angleY) {
+            const buffer = Array(height).fill().map(() => Array(width).fill(' '));
+            const { vertices, edges } = shapes[currentShape];
+
+            const rotatedVertices = vertices.map(v => rotateY(rotateX(v, angleX), angleY));
+            const projectedVertices = rotatedVertices.map(project);
+
+            for (const [a, b] of edges) {
+                const [x1, y1] = projectedVertices[a];
+                const [x2, y2] = projectedVertices[b];
+                drawLine(x1, y1, x2, y2, buffer);
+            }
+
+            return buffer.map(row => row.join('')).join('\n');
+        }
+
+        function drawLine(x1, y1, x2, y2, buffer) {
+            const dx = Math.abs(x2 - x1);
+            const dy = Math.abs(y2 - y1);
+            const sx = x1 < x2 ? 1 : -1;
+            const sy = y1 < y2 ? 1 : -1;
+            let err = dx - dy;
+
+            while (true) {
+                if (x1 >= 0 && x1 < width && y1 >= 0 && y1 < height) {
+                    buffer[y1][x1] = '#';
+                }
+
+                if (x1 === x2 && y1 === y2) break;
+                const e2 = 2 * err;
+                if (e2 > -dy) {
+                    err -= dy;
+                    x1 += sx;
+                }
+                if (e2 < dx) {
+                    err += dx;
+                    y1 += sy;
+                }
+            }
+        }
+
+        let angleX = 0;
+        let angleY = 0;
+
+        function animate() {
+            angleX += 0.03;
+            angleY += 0.02;
+            shapeElement.textContent = render(angleX, angleY);
+            requestAnimationFrame(animate);
+        }
+
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', () => {
+                currentShape = button.id.replace('Button', '');
+            });
+        });
+
+        animate();
+    </script>
+</body>
+</html>
