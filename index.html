@@ -20,6 +20,10 @@
             white-space: pre;
             font-size: 3px;
             line-height: 1;
+            cursor: grab;
+        }
+        #shape:active {
+            cursor: grabbing;
         }
         .buttons {
             margin-top: 20px;
@@ -44,7 +48,7 @@
         <button id="pyramidButton">Pyramid</button>
         <button id="coneButton">Cone</button>
         <button id="octahedronButton">Octahedron</button>
-        <button id="torusButton">Donut</button>
+        <button id="torusButton">Torus</button>
     </div>
 
     <script>
@@ -53,6 +57,16 @@
         const height = 150;
 
         let currentShape = 'cube';
+        let angleX = 0;
+        let angleY = 0;
+        let targetAngleX = 0;
+        let targetAngleY = 0;
+        let lastTime = 0;
+        const rotationSpeed = 0.5;
+        const returnSpeed = 2; // Speed at which the shape returns to original rotation
+
+        let isMouseDown = false;
+        let lastMouseX, lastMouseY;
 
         const shapes = {
             cube: {
@@ -251,22 +265,45 @@
             }
         }
 
-        let angleX = 0;
-        let angleY = 0;
-        let lastTime = 0;
-        const rotationSpeed = 0.5;
-
         function animate(currentTime) {
             if (!lastTime) lastTime = currentTime;
             const deltaTime = (currentTime - lastTime) / 1000;
             lastTime = currentTime;
 
-            angleX += rotationSpeed * deltaTime;
-            angleY += (rotationSpeed * 0.7) * deltaTime;
+            if (!isMouseDown) {
+                // Gradually return to original rotation
+                angleX += (targetAngleX - angleX) * returnSpeed * deltaTime;
+                angleY += (targetAngleY - angleY) * returnSpeed * deltaTime;
+
+                // Continue normal rotation
+                targetAngleX += rotationSpeed * deltaTime;
+                targetAngleY += (rotationSpeed * 0.7) * deltaTime;
+            }
 
             shapeElement.textContent = render(angleX, angleY);
             requestAnimationFrame(animate);
         }
+
+        shapeElement.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isMouseDown) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                angleY += deltaX * 0.01;
+                angleX += deltaY * 0.01;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
 
         document.querySelectorAll('button').forEach(button => {
             button.addEventListener('click', () => {
