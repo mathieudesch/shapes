@@ -1,2 +1,2 @@
 # shapes
-various rotating shapes. html and js
+various rotating 3d shapes. html and js
