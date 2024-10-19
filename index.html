@@ -23,9 +23,12 @@
         }
         .buttons {
             margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         button {
-            margin: 0 5px;
+            margin: 5px;
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
@@ -39,6 +42,9 @@
         <button id="cylinderButton">Cylinder</button>
         <button id="prismButton">Triangular Prism</button>
         <button id="pyramidButton">Pyramid</button>
+        <button id="coneButton">Cone</button>
+        <button id="octahedronButton">Octahedron</button>
+        <button id="torusButton">Donut</button>
     </div>
 
     <script>
@@ -83,10 +89,29 @@
                     [0, 1], [1, 2], [2, 3], [3, 0],
                     [0, 4], [1, 4], [2, 4], [3, 4]
                 ]
+            },
+            cone: {
+                vertices: createConeVertices(),
+                edges: createConeEdges()
+            },
+            octahedron: {
+                vertices: [
+                    [1, 0, 0], [-1, 0, 0], [0, 1, 0],
+                    [0, -1, 0], [0, 0, 1], [0, 0, -1]
+                ],
+                edges: [
+                    [2, 0], [2, 1], [2, 4], [2, 5],
+                    [3, 0], [3, 1], [3, 4], [3, 5],
+                    [4, 0], [4, 1], [5, 0], [5, 1]
+                ]
+            },
+            torus: {
+                vertices: createTorusVertices(),
+                edges: createTorusEdges()
             }
         };
 
-        function createCylinderVertices(segments = 40) {
+        function createCylinderVertices(segments = 20) {
             const vertices = [];
             for (let i = 0; i < segments; i++) {
                 const angle = (i / segments) * Math.PI * 2;
@@ -96,13 +121,63 @@
             return vertices;
         }
 
-        function createCylinderEdges(segments = 40) {
+        function createCylinderEdges(segments = 20) {
             const edges = [];
             for (let i = 0; i < segments; i++) {
                 const j = (i + 1) % segments;
                 edges.push([i * 2, j * 2]);
                 edges.push([i * 2 + 1, j * 2 + 1]);
                 edges.push([i * 2, i * 2 + 1]);
+            }
+            return edges;
+        }
+
+        function createConeVertices(segments = 20) {
+            const vertices = [[0, 1, 0]]; // Apex of the cone
+            for (let i = 0; i < segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                vertices.push([Math.cos(angle), -1, Math.sin(angle)]);
+            }
+            return vertices;
+        }
+
+        function createConeEdges(segments = 20) {
+            const edges = [];
+            for (let i = 1; i <= segments; i++) {
+                edges.push([0, i]); // Edge from apex to base
+                edges.push([i, i % segments + 1]); // Edge around base
+            }
+            return edges;
+        }
+
+        function createTorusVertices(mainSegments = 20, tubeSegments = 10) {
+            const vertices = [];
+            const R = 1; // Main radius
+            const r = 0.3; // Tube radius
+            for (let i = 0; i < mainSegments; i++) {
+                const u = (i / mainSegments) * Math.PI * 2;
+                for (let j = 0; j < tubeSegments; j++) {
+                    const v = (j / tubeSegments) * Math.PI * 2;
+                    vertices.push([
+                        (R + r * Math.cos(v)) * Math.cos(u),
+                        r * Math.sin(v),
+                        (R + r * Math.cos(v)) * Math.sin(u)
+                    ]);
+                }
+            }
+            return vertices;
+        }
+
+        function createTorusEdges(mainSegments = 20, tubeSegments = 10) {
+            const edges = [];
+            for (let i = 0; i < mainSegments; i++) {
+                for (let j = 0; j < tubeSegments; j++) {
+                    const current = i * tubeSegments + j;
+                    const next = i * tubeSegments + (j + 1) % tubeSegments;
+                    const below = ((i + 1) % mainSegments) * tubeSegments + j;
+                    edges.push([current, next]);
+                    edges.push([current, below]);
+                }
             }
             return edges;
         }
@@ -179,15 +254,15 @@
         let angleX = 0;
         let angleY = 0;
         let lastTime = 0;
-        const rotationSpeed = 0.7; // Adjust this value to change rotation speed
+        const rotationSpeed = 0.5;
 
         function animate(currentTime) {
             if (!lastTime) lastTime = currentTime;
-            const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+            const deltaTime = (currentTime - lastTime) / 1000;
             lastTime = currentTime;
 
             angleX += rotationSpeed * deltaTime;
-            angleY += (rotationSpeed * 0.7) * deltaTime; // Slightly slower Y rotation
+            angleY += (rotationSpeed * 0.7) * deltaTime;
 
             shapeElement.textContent = render(angleX, angleY);
             requestAnimationFrame(animate);
